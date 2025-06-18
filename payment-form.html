@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Stripe Payment</title>
+  <script src="https://js.stripe.com/v3/"></script>
+  <style>
+    body {
+      font-family: Arial;
+      padding: 2rem;
+    }
+    #card-element {
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 4px;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <h2>Enter Payment Details</h2>
+  <input type="email" id="email" placeholder="Customer Email" style="width: 100%; padding: 8px;" />
+  <input type="number" id="amount" placeholder="Amount in cents" style="width: 100%; padding: 8px; margin-top: 10px;" />
+  <div id="card-element"></div>
+  <button id="submit">Submit Payment</button>
+  <p id="status"></p>
+
+  <script>
+    const stripe = Stripe("pk_test_51OX3b3FIXO6eeDBwLZ8VHjOdxDI7PPPWTVXhHul8MDidBdUV6SGPPnp5K4B7sQLVwog7CrO9Sw1wRzCvHIVenUAU004lZlEXzG");
+    const elements = stripe.elements();
+    const card = elements.create('card');
+    card.mount('#card-element');
+
+    document.getElementById('submit').addEventListener('click', async () => {
+      const email = document.getElementById('email').value;
+      const amount = document.getElementById('amount').value;
+
+      const res = await fetch('/_hcms/api/create-payment-intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, amount: Number(amount) })
+      });
+
+      const { body } = await res.json();
+      const result = await stripe.confirmCardPayment(body.clientSecret, {
+        payment_method: {
+          card,
+          billing_details: { email }
+        }
+      });
+
+      if (result.paymentIntent?.status === "succeeded") {
+        document.getElementById('status').innerText = "✅ Payment successful";
+      } else {
+        document.getElementById('status').innerText = `❌ ${result.error?.message || "Payment failed"}`;
+      }
+    });
+  </script>
+</body>
+</html>
