@@ -6,35 +6,57 @@
   <script src="https://js.stripe.com/v3/"></script>
   <style>
     body {
-      font-family: Arial;
+      font-family: Arial, sans-serif;
       padding: 2rem;
+      max-width: 500px;
+      margin: auto;
     }
-    #card-element {
-      border: 1px solid #ccc;
+
+    input, .StripeElement {
+      width: 100%;
       padding: 10px;
       margin-top: 10px;
+      border: 1px solid #ccc;
       border-radius: 4px;
     }
+
     button {
       margin-top: 20px;
       padding: 10px 20px;
       font-size: 1rem;
+      width: 100%;
     }
   </style>
 </head>
 <body>
   <h2>Enter Payment Details</h2>
-  <input type="email" id="email" placeholder="Customer Email" style="width: 100%; padding: 8px;" />
-  <input type="number" id="amount" placeholder="Amount in cents" style="width: 100%; padding: 8px; margin-top: 10px;" />
-  <div id="card-element"></div>
+
+  <input type="email" id="email" placeholder="Customer Email" />
+  <input type="number" id="amount" placeholder="Amount in cents" />
+
+  <label>Card Number</label>
+  <div id="card-number"></div>
+
+  <label>Expiry Date</label>
+  <div id="card-expiry"></div>
+
+  <label>CVC</label>
+  <div id="card-cvc"></div>
+
   <button id="submit">Submit Payment</button>
   <p id="status"></p>
 
   <script>
     const stripe = Stripe("pk_test_51OX3b3FIXO6eeDBwLZ8VHjOdxDI7PPPWTVXhHul8MDidBdUV6SGPPnp5K4B7sQLVwog7CrO9Sw1wRzCvHIVenUAU004lZlEXzG");
     const elements = stripe.elements();
-    const card = elements.create('card');
-    card.mount('#card-element');
+
+    const cardNumber = elements.create('cardNumber');
+    const cardExpiry = elements.create('cardExpiry');
+    const cardCvc = elements.create('cardCvc');
+
+    cardNumber.mount('#card-number');
+    cardExpiry.mount('#card-expiry');
+    cardCvc.mount('#card-cvc');
 
     document.getElementById('submit').addEventListener('click', async () => {
       const email = document.getElementById('email').value;
@@ -47,9 +69,10 @@
       });
 
       const { body } = await res.json();
+
       const result = await stripe.confirmCardPayment(body.clientSecret, {
         payment_method: {
-          card,
+          card: cardNumber,
           billing_details: { email }
         }
       });
